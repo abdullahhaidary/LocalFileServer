@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local File Server</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .drop-zone {
+            background: white;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone.dragover {
+            background: #f0f7ff;
+            border-color: #2196f3;
+        }
+
+        .folder-list {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .folder-item {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 4px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .folder-item.active {
+            background: #2196f3;
+            color: white;
+        }
+
+        .file-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .file-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .file-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .file-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+            display: none;
+        }
+
+        .show-thumbnail .file-icon {
+            display: block;
+        }
+
+        .file-name {
+            font-size: 14px;
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .btn {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #1976d2;
+        }
+
+        .new-folder {
+            display: flex;
+            gap: 10px;
+        }
+
+        .new-folder input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            flex: 1;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #f0f0f0;
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar .progress {
+            width: 0%;
+            height: 100%;
+            background: #2196f3;
+            transition: width 0.3s ease;
+        }
+
+        .file-preview {
+            height: 100px;
+            width: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .file-type-icon {
+            font-size: 40px;
+            color: #666;
+        }
+
+        .android-icon {
+            color: #3ddc84;
+        }
+
+        .folder-icon {
+            color: #ffb74d;
+        }
+
+        .binary-icon {
+            color: #78909c;
+        }
+
+        .archive-icon {
+            color: #f44336;
+        }
+
+        .document-icon {
+            color: #2196f3;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .file-list {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Local File Server</h1>
+            <div class="new-folder">
+                <input type="text" id="newFolderName" placeholder="New folder name">
+                <button class="btn" onclick="createFolder()">Create Folder</button>
+            </div>
+        </div>
+
+        <div class="folder-list" id="folderList">
+            <!-- Folders will be listed here -->
+        </div>
+
+        <div class="drop-zone" id="dropZone">
+            <p>Drag and drop files here or click to select files</p>
+            <input type="file" id="fileInput" multiple style="display: none">
+            <div class="progress-bar" id="progressBar">
+                <div class="progress" id="progress"></div>
+            </div>
+        </div>
+
+        <div class="file-list" id="fileList">
+            <!-- Files will be listed here -->
+        </div>
+    </div>
+
+    <script>
+        let currentFolder = 'default';
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const progressBar = document.getElementById('progressBar');
+        const progress = document.getElementById('progress');
+
+        // Load initial data
+        loadFolders();
+        loadFiles();
+
+        // Event listeners
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // Functions
+        async function loadFolders() {
+            const response = await fetch('/folders');
+            const data = await response.json();
+            const folderList = document.getElementById('folderList');
+            
+            folderList.innerHTML = `
+                <div class="folder-item ${currentFolder === 'default' ? 'active' : ''}" 
+                     onclick="changeFolder('default')">Default</div>
+                ${data.folders.map(folder => `
+                    <div class="folder-item ${currentFolder === folder ? 'active' : ''}" 
+                         onclick="changeFolder('${folder}')">${folder}</div>
+                `).join('')}
+            `;
+        }
+
+        async function loadFiles() {
+            const response = await fetch(`/files?folder=${currentFolder}`);
+            const data = await response.json();
+            const fileList = document.getElementById('fileList');
+            
+            fileList.innerHTML = data.files.map(file => `
+                <div class="file-item">
+                    <div class="file-icon material-icons">${getFileIcon(file.name)}</div>
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${formatFileSize(file.size)}</div>
+                    <a href="${file.path}" download class="btn" style="display: block; text-align: center; margin-top: 10px;">
+                        Download
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        async function createFolder() {
+            const folderName = document.getElementById('newFolderName').value.trim();
+            if (!folderName) return;
+
+            const response = await fetch('/folders', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: folderName })
+            });
+
+            if (response.ok) {
+                document.getElementById('newFolderName').value = '';
+                loadFolders();
+            }
+        }
+
+        async function changeFolder(folder) {
+            currentFolder = folder;
+            loadFolders();
+            loadFiles();
+        }
+
+        async function handleFiles(files) {
+            progressBar.style.display = 'block';
+            progress.style.width = '0%';
+
+            for (let i = 0; i < files.length; i++) {
+                const formData = new FormData();
+                formData.append('file', files[i]);
+                formData.append('folder', currentFolder);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/upload', true);
+
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const percentComplete = (e.loaded / e.total) * 100;
+                        progress.style.width = percentComplete + '%';
+                    }
+                };
+
+                xhr.onload = () => {
+                    if (xhr.status === 200) {
+                        loadFiles();
+                    }
+                };
+
+                xhr.send(formData);
+            }
+        }
+
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const icons = {
+                pdf: 'picture_as_pdf',
+                jpg: 'image',
+                jpeg: 'image',
+                png: 'image',
+                gif: 'image',
+                doc: 'description',
+                docx: 'description',
+                xls: 'table_chart',
+                xlsx: 'table_chart',
+                txt: 'article',
+                zip: 'folder_zip',
+                rar: 'folder_zip'
+            };
+            return icons[ext] || 'insert_drive_file';
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+    </script>
+</body>
+</html> 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local File Server</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .drop-zone {
+            background: white;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone.dragover {
+            background: #f0f7ff;
+            border-color: #2196f3;
+        }
+
+        .folder-list {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .folder-item {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 4px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .folder-item.active {
+            background: #2196f3;
+            color: white;
+        }
+
+        .file-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .file-item {
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .file-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .file-icon {
+            font-size: 40px;
+            color: #2196f3;
+            margin-bottom: 10px;
+        }
+
+        .file-name {
+            font-size: 14px;
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+
+        .file-size {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .btn {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: #1976d2;
+        }
+
+        .new-folder {
+            display: flex;
+            gap: 10px;
+        }
+
+        .new-folder input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            flex: 1;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #f0f0f0;
+            border-radius: 2px;
+            margin-top: 10px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar .progress {
+            width: 0%;
+            height: 100%;
+            background: #2196f3;
+            transition: width 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .file-list {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+    </style>
+</head>
+
+</html> 

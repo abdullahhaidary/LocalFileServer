@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>عیدکم مبارک</title>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Scheherazade+New&display=swap");
+
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Scheherazade New", serif;
+        /* background: url("https://www.transparenttextures.com/patterns/arabesque.png")
+          repeat #fefbf3; */
+        color: #2f2f2f;
+        text-align: center;
+      }
+
+      .card {
+        /* background: linear-gradient(135deg, #ffffff, #f9f4e8); */
+        border-radius: 25px;
+        border: 4px solid #bfa347;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        padding: 50px 30px;
+        max-width: 700px;
+        margin: 80px auto;
+        position: relative;
+      }
+
+      .card::before {
+        content: "";
+        position: absolute;
+        top: -30px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 80px;
+        background: url("https://cdn-icons-png.flaticon.com/512/1998/1998611.png")
+          no-repeat center;
+        background-size: contain;
+      }
+
+      h1 {
+        font-size: 3em;
+        /* color: #047857; */
+        color: #cc8800;
+        margin-bottom: -30px;
+        text-shadow: 1px 1px #cfcfcf;
+      }
+
+      p {
+        font-size: 1.5em;
+        line-height: 2.2;
+        color: #3b2f1c;
+        margin-bottom: 10px;
+      }
+
+      .name {
+        font-size: 1.4em;
+        color: #5c3d00;
+        margin-top: -10px;
+        font-weight: bold;
+      }
+
+      .decor {
+        font-size: 2.5em;
+        margin: 20px 0;
+        color: #e0a100;
+      }
+
+      .download-btn {
+        margin-top: 30px;
+        padding: 12px 30px;
+        font-size: 1.1em;
+        background-color: #047857;
+        color: white;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        transition: background-color 0.3s ease;
+      }
+
+      .download-btn:hover {
+        background-color: #035f4b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card" id="eid-card">
+      <!-- <div class="decor">🌙🕋🌿</div> -->
+      <h1>عیدکم مبارک</h1>
+      <p>
+        تقبّل الله منا ومنكم صالح الأعمال، وأعاد الله عليكم العيد<br />
+        بالخير واليمن والبركات.
+      </p>
+      <!-- <div class="decor">🕌💫✨</div> -->
+      <div class="name">مولوی محمد فقیری محمدی</div>
+    </div>
+
+    <button class="download-btn" onclick="downloadCardImage()">
+      📥 دانلود تصویر با کیفیت
+    </button>
+
+    <!-- html2canvas CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <script>
+      function downloadCardImage() {
+        const card = document.getElementById("eid-card");
+        html2canvas(card, {
+          scale: 3,
+          useCORS: true,
+        }).then((canvas) => {
+          const link = document.createElement("a");
+          link.download = "eid-greeting.png";
+          link.href = canvas.toDataURL("image/png");
+          link.click();
+        });
+      }
+    </script>
+  </body>
+</html>
