@@ -13,6 +13,7 @@ app.use(cors());
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
+app.use('/assets', express.static('public/assets'));
 
 // Configure multer for file upload
 const storage = multer.diskStorage({
