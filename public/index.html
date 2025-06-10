@@ -86,6 +86,8 @@
             padding: 15px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
 
         .file-item:hover {
@@ -93,25 +95,54 @@
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
-        .file-icon {
-            font-size: 40px;
+        .file-preview {
+            height: 150px;
+            width: 100%;
+            border-radius: 8px;
             margin-bottom: 10px;
-            display: none;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
         }
 
-        .show-thumbnail .file-icon {
-            display: block;
+        .file-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .file-preview .file-icon {
+            font-size: 48px;
+            color: #666;
+        }
+
+        .file-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .file-name {
             font-size: 14px;
             margin-bottom: 5px;
             word-break: break-all;
+            font-weight: 500;
         }
 
         .file-size {
             font-size: 12px;
             color: #666;
+            margin-bottom: 10px;
+        }
+
+        .file-type {
+            font-size: 12px;
+            color: #2196f3;
+            text-transform: uppercase;
+            margin-bottom: 10px;
         }
 
         .btn {
@@ -122,6 +153,8 @@
             border-radius: 5px;
             cursor: pointer;
             transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
         }
 
         .btn:hover {
@@ -157,42 +190,16 @@
             transition: width 0.3s ease;
         }
 
-        .file-preview {
-            height: 100px;
-            width: 100%;
-            object-fit: cover;
-            border-radius: 8px;
-            margin-bottom: 10px;
-            background: #f0f0f0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .file-type-icon {
-            font-size: 40px;
-            color: #666;
-        }
-
-        .android-icon {
-            color: #3ddc84;
-        }
-
-        .folder-icon {
-            color: #ffb74d;
-        }
-
-        .binary-icon {
-            color: #78909c;
-        }
-
-        .archive-icon {
-            color: #f44336;
-        }
-
-        .document-icon {
-            color: #2196f3;
-        }
+        /* File type specific styles */
+        .android-icon { color: #3ddc84; }
+        .folder-icon { color: #ffb74d; }
+        .binary-icon { color: #78909c; }
+        .archive-icon { color: #f44336; }
+        .document-icon { color: #2196f3; }
+        .image-icon { color: #4caf50; }
+        .video-icon { color: #9c27b0; }
+        .audio-icon { color: #ff9800; }
+        .code-icon { color: #607d8b; }
 
         @media (max-width: 768px) {
             .container {
@@ -206,6 +213,10 @@
 
             .file-list {
                 grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .file-preview {
+                height: 120px;
             }
         }
     </style>
@@ -287,16 +298,30 @@
             const data = await response.json();
             const fileList = document.getElementById('fileList');
             
-            fileList.innerHTML = data.files.map(file => `
-                <div class="file-item">
-                    <div class="file-icon material-icons">${getFileIcon(file.name)}</div>
-                    <div class="file-name">${file.name}</div>
-                    <div class="file-size">${formatFileSize(file.size)}</div>
-                    <a href="${file.path}" download class="btn" style="display: block; text-align: center; margin-top: 10px;">
-                        Download
-                    </a>
-                </div>
-            `).join('');
+            fileList.innerHTML = data.files.map(file => {
+                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(file.name);
+                const fileType = getFileType(file.name);
+                const iconClass = getIconClass(file.name);
+                
+                return `
+                    <div class="file-item">
+                        <div class="file-preview">
+                            ${isImage ? 
+                                `<img src="${file.path}" alt="${file.name}" onerror="this.onerror=null; this.src='data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'48\' height=\'48\' viewBox=\'0 0 24 24\'><path fill=\'%23666\' d=\'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z\'/></svg>';">` :
+                                `<i class="material-icons ${iconClass}">${getFileIcon(file.name)}</i>`
+                            }
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-type">${fileType}</div>
+                            <div class="file-size">${formatFileSize(file.size)}</div>
+                            <a href="${file.path}" download class="btn">
+                                Download
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
         }
 
         async function createFolder() {
@@ -355,20 +380,151 @@
         function getFileIcon(filename) {
             const ext = filename.split('.').pop().toLowerCase();
             const icons = {
+                // Images
+                jpg: 'photo',
+                jpeg: 'photo',
+                png: 'photo',
+                gif: 'animation',
+                webp: 'photo',
+                
+                // Android
+                apk: 'android',
+                
+                // Documents
                 pdf: 'picture_as_pdf',
-                jpg: 'image',
-                jpeg: 'image',
-                png: 'image',
-                gif: 'image',
                 doc: 'description',
                 docx: 'description',
                 xls: 'table_chart',
                 xlsx: 'table_chart',
+                ppt: 'slideshow',
+                pptx: 'slideshow',
                 txt: 'article',
+                
+                // Archives
                 zip: 'folder_zip',
-                rar: 'folder_zip'
+                rar: 'folder_zip',
+                '7z': 'folder_zip',
+                tar: 'folder_zip',
+                gz: 'folder_zip',
+                
+                // Binaries
+                exe: 'settings',
+                bin: 'memory',
+                dmg: 'desktop_windows',
+                
+                // Audio/Video
+                mp3: 'audiotrack',
+                mp4: 'movie',
+                mov: 'movie',
+                avi: 'movie',
+                
+                // Code
+                js: 'code',
+                html: 'html',
+                css: 'css',
+                json: 'data_object'
             };
             return icons[ext] || 'insert_drive_file';
+        }
+
+        function getIconClass(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const classes = {
+                // Images
+                jpg: 'image-icon',
+                jpeg: 'image-icon',
+                png: 'image-icon',
+                gif: 'image-icon',
+                webp: 'image-icon',
+                
+                // Android
+                apk: 'android-icon',
+                
+                // Documents
+                pdf: 'document-icon',
+                doc: 'document-icon',
+                docx: 'document-icon',
+                xls: 'document-icon',
+                xlsx: 'document-icon',
+                ppt: 'document-icon',
+                pptx: 'document-icon',
+                txt: 'document-icon',
+                
+                // Archives
+                zip: 'archive-icon',
+                rar: 'archive-icon',
+                '7z': 'archive-icon',
+                tar: 'archive-icon',
+                gz: 'archive-icon',
+                
+                // Binaries
+                exe: 'binary-icon',
+                bin: 'binary-icon',
+                dmg: 'binary-icon',
+                
+                // Audio/Video
+                mp3: 'audio-icon',
+                mp4: 'video-icon',
+                mov: 'video-icon',
+                avi: 'video-icon',
+                
+                // Code
+                js: 'code-icon',
+                html: 'code-icon',
+                css: 'code-icon',
+                json: 'code-icon'
+            };
+            return classes[ext] || '';
+        }
+
+        function getFileType(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const types = {
+                // Images
+                jpg: 'Image',
+                jpeg: 'Image',
+                png: 'Image',
+                gif: 'Image',
+                webp: 'Image',
+                
+                // Android
+                apk: 'Android App',
+                
+                // Documents
+                pdf: 'PDF Document',
+                doc: 'Word Document',
+                docx: 'Word Document',
+                xls: 'Excel Spreadsheet',
+                xlsx: 'Excel Spreadsheet',
+                ppt: 'PowerPoint',
+                pptx: 'PowerPoint',
+                txt: 'Text File',
+                
+                // Archives
+                zip: 'ZIP Archive',
+                rar: 'RAR Archive',
+                '7z': '7-Zip Archive',
+                tar: 'TAR Archive',
+                gz: 'GZIP Archive',
+                
+                // Binaries
+                exe: 'Executable',
+                bin: 'Binary File',
+                dmg: 'Disk Image',
+                
+                // Audio/Video
+                mp3: 'Audio File',
+                mp4: 'Video File',
+                mov: 'Video File',
+                avi: 'Video File',
+                
+                // Code
+                js: 'JavaScript',
+                html: 'HTML',
+                css: 'CSS',
+                json: 'JSON'
+            };
+            return types[ext] || 'File';
         }
 
         function formatFileSize(bytes) {
@@ -380,177 +536,4 @@
         }
     </script>
 </body>
-</html> 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Local File Server</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .drop-zone {
-            background: white;
-            border: 2px dashed #ccc;
-            border-radius: 10px;
-            padding: 40px;
-            text-align: center;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .drop-zone.dragover {
-            background: #f0f7ff;
-            border-color: #2196f3;
-        }
-
-        .folder-list {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .folder-item {
-            display: inline-block;
-            padding: 8px 16px;
-            margin: 4px;
-            background: #f0f0f0;
-            border-radius: 20px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .folder-item.active {
-            background: #2196f3;
-            color: white;
-        }
-
-        .file-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .file-item {
-            background: white;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-        }
-
-        .file-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-        }
-
-        .file-icon {
-            font-size: 40px;
-            color: #2196f3;
-            margin-bottom: 10px;
-        }
-
-        .file-name {
-            font-size: 14px;
-            margin-bottom: 5px;
-            word-break: break-all;
-        }
-
-        .file-size {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .btn {
-            background: #2196f3;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn:hover {
-            background: #1976d2;
-        }
-
-        .new-folder {
-            display: flex;
-            gap: 10px;
-        }
-
-        .new-folder input {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            flex: 1;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background: #f0f0f0;
-            border-radius: 2px;
-            margin-top: 10px;
-            overflow: hidden;
-            display: none;
-        }
-
-        .progress-bar .progress {
-            width: 0%;
-            height: 100%;
-            background: #2196f3;
-            transition: width 0.3s ease;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-
-            .header {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .file-list {
-                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            }
-        }
-    </style>
-</head>
-
 </html> 
